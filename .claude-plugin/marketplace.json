@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "bronto-claude-code-plugins",
+  "version": "1.0.0",
+  "description": "Bundled plugins for Claude Code related to logging",
+  "owner": {
+    "name": "Bronto",
+    "email": "support@bronto.io"
+  },
+  "plugins": [
+    {
+      "name": "bronto-logging",
+      "description": "Plugin to configure logging following best practices",
+      "source": "./plugins/bronto-logging",
+      "category": "development"
+    }
+  ]
+}
