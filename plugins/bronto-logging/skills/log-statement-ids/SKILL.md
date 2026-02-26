@@ -1,5 +1,5 @@
 ---
-name: Log Statement IDs
+name: log-statement-ids
 description: a skill to describe log statement IDs, how to generate them, inject them into source code, as well as how to create a statement file that contain the mapping between log statements within the project and their associated statement ID.
 ---
 
@@ -124,5 +124,5 @@ should lead to
 }
 ```
 
-Write all the extracted log statements and statement IDs to a CSV file named statementIds.csv at 
+Write all the extracted log statements and statement IDs to a CSV file named statementIds.json at 
 the root of this project.
