@@ -1,0 +1,7 @@
+{
+  "name": "bronto-cursor-plugin",
+  "version": "1.0.0",
+  "description": "Bronto logging and observability: hosted MCP for datasets, log search, and timeseries in Cursor.",
+  "homepage": "https://docs.bronto.io",
+  "keywords": ["bronto", "observability", "logs", "mcp", "telemetry", "search"]
+}
