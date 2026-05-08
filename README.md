@@ -12,7 +12,7 @@ This repository also includes platform plugin metadata. Configure the Bronto MCP
 | Platform    | Setup guide                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------- |
 | Cursor      | `[.cursor-plugin/README.md](.cursor-plugin/README.md)`                                      |
-| Claude Code | [Claude Code plugin docs](https://code.claude.com/docs/en/discover-plugins#add-from-github) |
+| Claude Code | `[.claude-plugin/README.md](.claude-plugin/README.md)`                                      |
 
 
 ## Usage
