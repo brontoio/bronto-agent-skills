@@ -1,7 +1,9 @@
 # Bronto Query Shapes
 
 Use this reference to help coding agents translate between common Bronto search
-concepts, Bronto API payload fields, and Bronto MCP tool arguments.
+concepts, Bronto REST API request payload fields, and Bronto MCP tool arguments.
+MCP examples are payloads passed to MCP tools; API examples are request payloads
+sent to the Bronto REST API.
 
 ## Naming Map
 
@@ -19,8 +21,9 @@ concepts, Bronto API payload fields, and Bronto MCP tool arguments.
 | Time buckets       | `num_of_slices`  | `num_of_slices`     |
 | Sort expression    | `order_by`       | `order_by`          |
 
-Agent-facing examples should use MCP argument names. Use the API field names only
-when explaining or porting saved query definitions from application code.
+Agent-facing examples should use MCP argument names when calling MCP tools. Use
+API field names when explaining, constructing, or porting Bronto REST API request
+payloads from application code.
 
 ## Dataset Selection
 
@@ -53,7 +56,7 @@ Treat them as alternative source-selection modes by default.
 
 ## Log Search
 
-Raw event searches use this logical shape:
+Raw event searches use this Bronto REST API request shape:
 
 - dataset selection: `from` or `from_expr`
 - filter: `where`
@@ -62,7 +65,7 @@ Raw event searches use this logical shape:
 - sort: `most_recent_first`, optional `order_by`
 - pagination and async polling for large searches
 
-Use MCP `search_logs` for this shape:
+MCP `search_logs` tool payload:
 
 ```json
 {
@@ -74,7 +77,7 @@ Use MCP `search_logs` for this shape:
 }
 ```
 
-Equivalent lower-level API-style search request:
+Equivalent Bronto REST API search request payload:
 
 ```json
 {
@@ -91,7 +94,7 @@ Equivalent lower-level API-style search request:
 
 ## Timeseries
 
-Aggregate searches use this logical shape:
+Aggregate searches use this Bronto REST API request shape:
 
 - `select`: aggregate expressions such as `count(*)`, `avg(field)`, `p95(field)`
 - `groups`: group-by keys
@@ -99,7 +102,7 @@ Aggregate searches use this logical shape:
 - `num_of_slices`: chart buckets
 - `limit`: top group count
 
-Use MCP `timeseries` for this shape:
+MCP `timeseries` tool payload:
 
 ```json
 {
@@ -113,7 +116,7 @@ Use MCP `timeseries` for this shape:
 }
 ```
 
-Equivalent lower-level API-style aggregate request:
+Equivalent Bronto REST API aggregate request payload:
 
 ```json
 {
@@ -128,6 +131,21 @@ Equivalent lower-level API-style aggregate request:
   "async_enabled": true
 }
 ```
+
+## Async API Responses
+
+For Bronto REST API request payloads with `async_enabled: true`, the initial
+response returns HTTP `202`. In the response body's `links` array, find the object
+where `rel` is `status`; its `href` value is the polling URL for the async
+results.
+
+Poll that `href` until the final result is ready:
+
+- Intermediate polling responses return HTTP `200`.
+- The response body has a `status` field, usually `IN_PROGRESS` while work is
+  still running.
+- The final polling response returns HTTP `201` and `status: "COMPLETED"`.
+- Stop polling only after receiving both HTTP `201` and `status: "COMPLETED"`.
 
 ## Traces
 
