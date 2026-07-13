@@ -19,7 +19,7 @@ Do not start by querying every dataset. Pick candidate datasets by name, collect
 
 For "what happened" questions:
 
-1. Identify production dataset(s).
+1. Identify dataset(s).
 2. Use `timeseries` grouped by high-signal dimensions.
 3. Drill into the worst group with `search_logs`.
 4. Return examples with timestamps, key fields, and raw message snippets.
