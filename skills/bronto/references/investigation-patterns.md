@@ -1,7 +1,7 @@
 # Bronto Investigation Patterns
 
 Use this reference when a coding agent is investigating production issues, telemetry,
-logs, traces, errors, latency, or traffic changes through Bronto MCP.
+logs, errors, latency, or traffic changes through Bronto MCP.
 
 ## Default Investigation Flow
 
@@ -10,7 +10,7 @@ logs, traces, errors, latency, or traffic changes through Bronto MCP.
 3. Inspect common values with `get_key_values` for fields you plan to filter or group by.
 4. Use `timeseries` first for broad scope, counts, rates, trends, percentiles, and top offenders.
 5. Use `search_logs` after narrowing the question to fetch representative raw evidence.
-  Use `search_logs` directly when the user provides an exact trace ID, event ID, unique error string, or pasted log message.
+  Use `search_logs` directly when the user provides an exact event ID, unique error string, or pasted log message.
 6. Report the dataset selection, time window, filter, grouped findings, and raw examples used.
 
 Do not start by querying every dataset. Pick candidate datasets by name, collection, tags, or exact ID.
@@ -24,7 +24,7 @@ For "what happened" questions:
 3. Drill into the worst group with `search_logs`.
 4. Return examples with timestamps, key fields, and raw message snippets.
 
-For exact evidence requests, such as a trace ID, event ID, unique error string, or
+For exact evidence requests, such as an event ID, unique error string, or
 pasted log message, start with a narrow `search_logs` query instead of aggregating first.
 
 Good group-by candidates (always use keys that we know exist in the datasets from the get_keys tool call):
@@ -61,7 +61,7 @@ Then run `search_logs` on the top group:
 ```
 
 If the status field is unknown, inspect keys first and try likely variants:
-`status`, `status_code`, `http.status_code`, `$span.status_code`.
+`status`, `status_code`, `http.status_code`.
 
 ## Latency
 
@@ -79,111 +79,5 @@ Prefer percentiles over averages:
   "time_range": "Last 1 hour",
   "limit": 20
 }
-```
-
-If the field is OpenTelemetry span duration, use `$span.duration_nano` and convert ns to ms
-by dividing by `1_000_000`.
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "metric_functions": [
-    "P50($span.duration_nano)",
-    "P95($span.duration_nano)",
-    "P99($span.duration_nano)"
-  ],
-  "group_by_keys": ["$span.name", "$service.name"],
-  "time_range": "Last 1 hour",
-  "limit": 20
-}
-```
-
-## Traces
-
-Trace datasets are usually in collection `.traces`.
-
-Common OTel fields:
-
-- `$span.trace_id`
-- `$span.span_id`
-- `$span.parent_span_id`
-- `$span.name`
-- `$service.name`
-- `$span.status_code`
-- `$span.duration_nano`
-- `$span.kind`
-
-Root span filter:
-
-```text
-"$span.parent_span_id"='0000000000000000'
-```
-
-Trace list / operation overview:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "metric_functions": ["COUNT(*)"],
-  "search_filter": "\"$span.parent_span_id\"='0000000000000000'",
-  "group_by_keys": ["$span.name", "$service.name", "$span.status_code"],
-  "time_range": "Last 10 minutes",
-  "limit": 1000
-}
-```
-
-Trace latency percentiles:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "metric_functions": [
-    "P50($span.duration_nano)",
-    "P95($span.duration_nano)",
-    "P99($span.duration_nano)"
-  ],
-  "search_filter": "\"$span.parent_span_id\"='0000000000000000'",
-  "time_range": "Last 10 minutes"
-}
-```
-
-Error traces:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "metric_functions": ["COUNT(*)"],
-  "search_filter": "\"$span.parent_span_id\"='0000000000000000' AND \"$span.status_code\"='STATUS_CODE_ERROR'",
-  "group_by_keys": ["$span.name", "$service.name"],
-  "time_range": "Last 10 minutes",
-  "limit": 50
-}
-```
-
-Trace drill-down:
-
-Reuse the incident window when one is known. Otherwise start with a narrow
-relative range and widen only if the trace is not found.
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "time_range": "Last 30 minutes",
-  "search_filter": "\"$span.trace_id\"='TRACE_ID'",
-  "limit": 1000
-}
-```
-
-If trace ID fields vary, OR them:
-
-```text
-"$span.trace_id"='TRACE_ID' OR "$trace_id"='TRACE_ID' OR "trace_id"='TRACE_ID'
-```
-
-For span-specific drill-down, also OR span ID variants:
-
-```text
-("$span.trace_id"='TRACE_ID' OR "$trace_id"='TRACE_ID' OR "trace_id"='TRACE_ID')
-AND ("$span.span_id"='SPAN_ID' OR "$span_id"='SPAN_ID' OR "span_id"='SPAN_ID')
 ```
 

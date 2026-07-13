@@ -58,9 +58,9 @@ Use from_expr when dataset selection is tag/collection based:
 
 ```json
 {
-  "from_expr": "(\"collection\" IN ('.traces'))",
+  "from_expr": "(\"collection\" IN ('prod-api'))",
   "time_range": "Last 10 minutes",
-  "search_filter": "\"$span.status_code\"='STATUS_CODE_ERROR'",
+  "search_filter": "\"status\" >= 500",
   "limit": 50
 }
 ```

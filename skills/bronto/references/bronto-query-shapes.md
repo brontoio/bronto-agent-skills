@@ -43,14 +43,6 @@ Use `from_expr` when selecting by collection, dataset group, or tags:
 }
 ```
 
-Trace collection selection:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))"
-}
-```
-
 Avoid sending both `log_ids` and `from_expr` unless the tool explicitly supports combining them.
 Treat them as alternative source-selection modes by default.
 
@@ -147,62 +139,6 @@ Poll that `href` until the final result is ready:
 - The final polling response returns HTTP `201` and `status: "COMPLETED"`.
 - Stop polling only after receiving both HTTP `201` and `status: "COMPLETED"`.
 
-## Traces
-
-Tracing uses normal log search and timeseries over trace datasets.
-
-Trace dataset expression:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))"
-}
-```
-
-Root span filter:
-
-```text
-"$span.parent_span_id"='0000000000000000'
-```
-
-Span ID present filter:
-
-```text
-("$span.span_id" IS NOT NULL OR "$span_id" IS NOT NULL OR "span_id" IS NOT NULL)
-```
-
-Trace overview query:
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "time_range": "Last 10 minutes",
-  "metric_functions": ["COUNT(*)"],
-  "search_filter": "\"$span.parent_span_id\"='0000000000000000'",
-  "group_by_keys": ["$span.name", "$service.name", "$span.status_code"],
-  "limit": 1000
-}
-```
-
-Single trace raw query:
-
-Reuse the incident window when one is known. Otherwise start with a narrow
-relative range and widen only if the trace is not found.
-
-```json
-{
-  "from_expr": "(\"collection\" IN ('.traces'))",
-  "time_range": "Last 30 minutes",
-  "search_filter": "\"$span.trace_id\"='TRACE_ID'",
-  "limit": 1000
-}
-```
-
-Known trace and span ID variants:
-
-- Trace IDs: `$span.trace_id`, `$trace_id`, `trace_id`
-- Span IDs: `$span.span_id`, `$span_id`, `span_id`
-
 ## Time Ranges
 
 Use relative time for exploratory queries:
@@ -229,7 +165,7 @@ Do not mix relative and absolute time in the same query unless the tool explicit
 Quote keys with special characters:
 
 ```text
-"$span.status_code"='STATUS_CODE_ERROR'
+"http.status_code" >= 500
 ```
 
 String values use single quotes:
@@ -247,5 +183,5 @@ Combine filters with explicit parentheses:
 Use `IS NULL` / `IS NOT NULL` for missing fields:
 
 ```text
-"$span.span_id" IS NOT NULL
+"error.type" IS NOT NULL
 ```

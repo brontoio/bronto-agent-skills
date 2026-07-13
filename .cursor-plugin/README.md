@@ -1,8 +1,10 @@
 # Bronto Plugin for Cursor
 
-Investigate Bronto logs, traces, datasets, and timeseries directly from Cursor using Bronto's hosted MCP servers.
+Investigate Bronto logs, datasets, and timeseries directly from Cursor using Bronto's hosted MCP servers.
 
-The plugin provides Bronto MCP configuration and the Bronto investigation skill. If `BRONTO_API_KEY` is set in the environment where Cursor launches, the bundled `mcp.json` sends it to the regional MCP endpoint. If no API key is set, the MCP server uses OAuth-based authentication.
+The plugin provides Bronto MCP configuration and the Bronto investigation
+skill. It exposes both regional MCP servers so users can authenticate to the
+region that hosts their Bronto organization.
 
 ## Prerequisites
 
@@ -16,13 +18,18 @@ Create or manage API keys in Bronto:
 
 ## Configure Authentication
 
-For API key authentication, set `BRONTO_API_KEY` in the environment used to launch Cursor. The MCP entries in this repository read that value and send it as `X-BRONTO-API-KEY`.
+For API key authentication, set the environment variable for the region used by
+your Bronto organization. Set one or both variables as needed:
 
 ```bash
-export BRONTO_API_KEY="your_api_key"
+export US_BRONTO_API_KEY="your_us_api_key"
+export EU_BRONTO_API_KEY="your_eu_api_key"
 ```
 
-Restart Cursor after changing environment variables. If `BRONTO_API_KEY` is not set, the MCP server will prompt for OAuth-based authentication instead.
+The `bronto-us` server reads only `US_BRONTO_API_KEY`; the `bronto-eu` server
+reads only `EU_BRONTO_API_KEY`. Restart Cursor after changing environment
+variables. For a server whose regional API key is not set, complete its
+OAuth-based authentication flow instead.
 
 ## Installation
 
@@ -65,7 +72,9 @@ Use the server that matches your Bronto organization region. Disable or ignore t
 ## Verify The Plugin
 
 1. Open Cursor settings and confirm third-party plugins, skills, and configs are enabled.
-2. If using an API key, confirm `BRONTO_API_KEY` is available to the Cursor process. Otherwise, complete the OAuth authentication flow when prompted.
+2. If using an API key, confirm `US_BRONTO_API_KEY` or `EU_BRONTO_API_KEY` is
+   available to the Cursor process. Otherwise, complete OAuth for the server
+   matching your region.
 3. Open Cursor's MCP status and check that `bronto-us` or `bronto-eu` connects without authentication or region errors.
 4. Ask Cursor to list Bronto datasets or inspect available keys for a dataset.
 

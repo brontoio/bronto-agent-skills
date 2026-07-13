@@ -1,29 +1,29 @@
 # Bronto Agent Skills
 
-Agent Skills to help AI coding assistants investigate logs, traces, latency, errors, grouped trends, and raw events with Bronto.
+Agent Skills to help AI coding assistants investigate logs, latency, errors, grouped trends, and raw events with Bronto.
 
 ## Installation
 
 ### As a Platform Plugin
 
-This repository also includes platform plugin metadata. Configure the Bronto MCP server connection through the setup guide for your platform.
+The Cursor plugin includes the Bronto investigation skill and hosted MCP
+configuration. The Claude Code marketplace currently exposes only the separate
+`bronto-logging` plugin for logging statement IDs; it does not package the
+Bronto investigation skill.
 
-
-| Platform    | Setup guide                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| Cursor      | `[.cursor-plugin/README.md](.cursor-plugin/README.md)`                                      |
-| Claude Code | `[.claude-plugin/README.md](.claude-plugin/README.md)`                                      |
-
+| Platform    | Available components                              | Setup guide                                             |
+| ----------- | ------------------------------------------------- | ------------------------------------------------------- |
+| Cursor      | Bronto investigation skill and hosted MCP config | [Cursor setup](.cursor-plugin/README.md)                 |
+| Claude Code | `bronto-logging` statement-ID plugin only        | [Claude Code setup](.claude-plugin/README.md)            |
 
 ## Usage
 
-Once installed, the skill is available automatically when your assistant detects a Bronto-related task. Example prompts:
+After installing the Cursor plugin, the Bronto investigation skill is available
+automatically when Cursor detects a Bronto-related task. Example prompts:
 
 ### Investigate production behavior
 
 `Use Bronto to find the services with the highest error rate in the last hour`
-
-`Look up this trace ID and summarize the failing span`
 
 `Find recent logs for checkout timeouts and show representative examples`
 
@@ -37,17 +37,19 @@ Once installed, the skill is available automatically when your assistant detects
 
 ## Skill Structure
 
-The Bronto skill follows the Agent Skills format:
+The Cursor Bronto investigation skill follows the Agent Skills format:
 
 - `skills/bronto/SKILL.md` - Skill manifest, routing table, workflow, and guardrails
 - `skills/bronto/references/` - Bronto query shapes, MCP tool patterns, and investigation guidance
 - `mcp.json` - Bronto hosted MCP server definitions for US and EU regions
 
-## Prerequisites
+## Cursor Plugin Prerequisites
 
 - Bronto account in the correct data region, US or EU.
-- API key with permission to search the organization's data.
-- MCP login method enabled in Bronto when using OAuth-capable clients.
+- Either OAuth access or an API key with permission to search the organization's
+  data.
+- For API key authentication, expose the key as `US_BRONTO_API_KEY` or
+  `EU_BRONTO_API_KEY` for the organization's region.
 
 ## Quick Verification
 
