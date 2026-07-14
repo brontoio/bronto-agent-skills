@@ -43,5 +43,5 @@ description: Investigate logs, latency, errors, grouped trends, and raw events u
 - Prefer `from_expr`/dataset selection expressions when the user asks by collection/tag. Prefer `log_ids` when exact datasets are known.
 - Prefer `timeseries` for error rates, trends, top offenders, and latency percentiles.
 - Prefer `search_logs` after aggregation identifies where to drill down, except when the user already provides exact evidence such as an event ID, unique error string, or pasted log message.
-- Preserve Bronto filter syntax: quote keys with special characters, e.g. `"http.status_code" >= 500`.
+- Bronto's query language is a subset of SQL. Preserve its filter syntax: quote keys with special characters, e.g. `"http.status_code" >= 500`.
 
