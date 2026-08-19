@@ -1,6 +1,6 @@
 # Bronto Plugin for Cursor
 
-Investigate Bronto logs, datasets, and timeseries directly from Cursor using Bronto's hosted MCP servers.
+Investigate Bronto telemetry, reuse queries, manage monitors, and audit coverage directly from Cursor using Bronto's hosted MCP servers.
 
 The plugin provides Bronto MCP configuration and the Bronto investigation
 skill. It exposes both regional MCP servers so users can authenticate to the
@@ -9,52 +9,68 @@ region that hosts their Bronto organization.
 ## Prerequisites
 
 - A Bronto account in the correct data region, US or EU.
+- MCP access enabled by a Bronto administrator under **Settings → Authentication**.
 - Optional: a Bronto API key with permission to search your organization's data.
-- Cursor with third-party plugins, skills, and configs enabled.
+- Cursor Desktop or Cursor Agent CLI.
 
 Create or manage API keys in Bronto:
 
 [https://docs.bronto.io/Account-Management/API-Keys.md](https://docs.bronto.io/Account-Management/API-Keys.md)
 
-## Configure Authentication
-
-For API key authentication, set the environment variable for the region used by
-your Bronto organization. Set one or both variables as needed:
-
-```bash
-export US_BRONTO_API_KEY="your_us_api_key"
-export EU_BRONTO_API_KEY="your_eu_api_key"
-```
-
-The `bronto-us` server reads only `US_BRONTO_API_KEY`; the `bronto-eu` server
-reads only `EU_BRONTO_API_KEY`. Restart Cursor after changing environment
-variables. For a server whose regional API key is not set, complete its
-OAuth-based authentication flow instead.
-
 ## Installation
 
-### Manual Local Installation
+### Direct Git URL
 
-Clone this repository into Cursor's local plugin directory:
+Cursor Agent CLI can install the plugin directly from GitHub:
 
-```bash
-mkdir -p ~/.cursor/plugins/local
-git clone https://github.com/brontoio/bronto-agent-skills.git ~/.cursor/plugins/local/bronto-cursor-plugin
-```
+1. Start the CLI with `agent`.
+2. Run `/plugin`.
+3. Paste `https://github.com/brontoio/bronto-agent-skills.git` into plugin
+  search, then install it at user or project scope.
 
-Then reload Cursor with `Cmd+Shift+P` and `Developer: Reload Window`.
 
-Cursor's local plugin loader expects a real directory under `~/.cursor/plugins/local`. A symlink at `~/.cursor/plugins/local/<name>` can be skipped by the loader, so clone or copy the repository there directly.
 
-### Keep a Dev Checkout Elsewhere
+### Local Development
 
-If you want the active plugin to live under Cursor's plugin directory but still appear in your normal development folder, keep the real directory under `~/.cursor/plugins/local` and create the symlink in the other direction:
+Clone the repository, then symlink it into Cursor's local plugin directory:
 
 ```bash
+git clone https://github.com/brontoio/bronto-agent-skills.git /absolute/path/to/bronto-agent-skills
 mkdir -p ~/.cursor/plugins/local
-mv ~/dev/projects/bronto-agent-skills ~/.cursor/plugins/local/bronto-cursor-plugin
-ln -s ~/.cursor/plugins/local/bronto-cursor-plugin ~/dev/projects/bronto-agent-skills
+ln -s /absolute/path/to/bronto-agent-skills ~/.cursor/plugins/local/bronto-cursor-plugin
 ```
+
+Alternatively, load the checkout for one Cursor Agent CLI session:
+
+```bash
+agent --plugin-dir /absolute/path/to/bronto-agent-skills
+```
+
+After adding the local plugin, restart Cursor or open the Command Palette
+(`Cmd+Shift+P` on macOS; `Ctrl+Shift+P` on Windows/Linux) and run
+**Developer: Reload Window**.
+
+## Configure Authentication
+
+
+
+### OAuth
+
+OAuth is the default:
+
+1. Open **Customize → MCPs**.
+2. Select `bronto-us` or `bronto-eu` for your organization's region.
+3. Select **Login** and complete the browser authentication flow.
+4. Disable the unused regional server.
+
+
+
+### API Key
+
+Open the installed Bronto plugin in **Customize**, select **Configure**, and set
+`US_BRONTO_API_KEY` or `EU_BRONTO_API_KEY`. The `bronto-us` server reads only
+`US_BRONTO_API_KEY`; the `bronto-eu` server reads only `EU_BRONTO_API_KEY`.
+Leave both unset and complete the OAuth login flow to use OAuth.
 
 ## MCP Servers
 
@@ -67,33 +83,39 @@ This plugin declares two hosted Bronto MCP servers:
 | `bronto-eu` | `https://mcp.eu.bronto.io/mcp` |
 
 
-Use the server that matches your Bronto organization region. Disable or ignore the other server in Cursor's MCP settings.
+Use the server that matches your Bronto organization region. Disable the other
+server under **Customize → MCPs**.
 
 ## Verify The Plugin
 
-1. Open Cursor settings and confirm third-party plugins, skills, and configs are enabled.
-2. If using an API key, confirm `US_BRONTO_API_KEY` or `EU_BRONTO_API_KEY` is
-   available to the Cursor process. Otherwise, complete OAuth for the server
-   matching your region.
-3. Open Cursor's MCP status and check that `bronto-us` or `bronto-eu` connects without authentication or region errors.
-4. Ask Cursor to list Bronto datasets or inspect available keys for a dataset.
+1. Open **Customize → MCPs** and confirm the server matching your region is
+  enabled and the other regional server is disabled.
+2. For OAuth, select **Login** and complete browser authentication. For API-key
+  authentication, configure the matching plugin variable.
+3. Confirm the selected server connects without authentication or region errors.
+4. Ask Cursor to call `get_datasets` and confirm results include `active` and
+  `last_heartbeat_at`.
+5. Ask Cursor to call `get_error_summary` for a short window.
 
-For local plugin loading issues, inspect Cursor's plugin log under:
-
-```text
-~/Library/Application Support/Cursor/logs/<latest>/window*/exthost/anysphere.cursor-agent-exec/Cursor Plugins.log
-```
+For connection or authentication errors, open Cursor's Output panel
+(`Cmd+Shift+U` on macOS; `Ctrl+Shift+U` on Windows/Linux) and select
+**MCP Logs**. Use **Customize → MCPs** or `agent mcp list` to check server
+status.
 
 ## What's Included
 
 
-| File                         | What it does                                                          |
-| ---------------------------- | --------------------------------------------------------------------- |
-| `.cursor-plugin/plugin.json` | Cursor plugin manifest with name, description, homepage, and keywords |
-| `mcp.json`                   | Bronto hosted MCP server configuration for US and EU regions          |
-| `skills/bronto/SKILL.md`     | Bronto investigation workflow, routing table, and guardrails          |
-| `skills/bronto/references/`  | Detailed query, schema discovery, and investigation patterns          |
+| File                         | What it does                                                           |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `.cursor-plugin/plugin.json` | Cursor plugin manifest with name, description, homepage, and keywords  |
+| `mcp.json`                   | Bronto hosted MCP server configuration for US and EU regions           |
+| `skills/bronto/SKILL.md`     | Bronto investigation workflow, routing table, and guardrails           |
+| `skills/bronto/references/`  | MCP tool guidance, query payload examples, and investigation workflows |
 
+
+The MCP surface covers dataset and schema discovery, raw and aggregate queries,
+precomputed error triage, saved searches, monitors, coverage, usage, and
+regional browser authentication.
 
 ## Links
 

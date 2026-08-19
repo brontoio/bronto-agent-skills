@@ -46,6 +46,30 @@ Use `from_expr` when selecting by collection, dataset group, or tags:
 Avoid sending both `log_ids` and `from_expr` unless the tool explicitly supports combining them.
 Treat them as alternative source-selection modes by default.
 
+## Discovery
+
+`get_datasets` uses `from`, not `log_ids`, when narrowing discovery to exact dataset IDs:
+
+```json
+{
+  "from": ["dataset-id-1", "dataset-id-2"],
+  "minimal_output": true
+}
+```
+
+Alternatively, pass `from_expr`. Do not pass both. Returned datasets include `active` and `last_heartbeat_at`; use them to avoid searching dormant datasets outside the requested window.
+
+Use `get_datasets_by_name` when both names are known:
+
+```json
+{
+  "collection_name": "production",
+  "dataset_name": "api"
+}
+```
+
+`get_keys` takes one `log_id` and returns common `{name, type}` entries. `get_key_values` takes `log_id` plus one exact `key`. `get_all_datasets_keys` takes no arguments and returns common keys keyed by `log_id`.
+
 ## Log Search
 
 Raw event searches use this Bronto REST API request shape:
@@ -55,7 +79,6 @@ Raw event searches use this Bronto REST API request shape:
 - time: `time_range` or `from_ts` + `to_ts`
 - raw event fields, equivalent to `select: ["*", "@raw"]`
 - sort: `most_recent_first`, optional `order_by`
-- pagination and async polling for large searches
 
 MCP `search_logs` tool payload:
 
@@ -79,8 +102,7 @@ Equivalent Bronto REST API search request payload:
   "select": ["*", "@raw"],
   "limit": 20,
   "most_recent_first": true,
-  "timeline_enabled": true,
-  "async_enabled": true
+  "timeline_enabled": true
 }
 ```
 
@@ -119,25 +141,92 @@ Equivalent Bronto REST API aggregate request payload:
   "groups": ["host", "path", "status"],
   "limit": 20,
   "num_of_slices": 20,
-  "timeline_enabled": true,
-  "async_enabled": true
+  "timeline_enabled": true
 }
 ```
 
-## Async API Responses
+## Error Summary
 
-For Bronto REST API request payloads with `async_enabled: true`, the initial
-response returns HTTP `202`. In the response body's `links` array, find the object
-where `rel` is `status`; its `href` value is the polling URL for the async
-results.
+Use `get_error_summary` before querying datasets for broad error or warning investigations:
 
-Poll that `href` until the final result is ready:
+```json
+{
+  "time_range": "Last 1 hour",
+  "num_of_slices": 12
+}
+```
 
-- Intermediate polling responses return HTTP `200`.
-- The response body has a `status` field, usually `IN_PROGRESS` while work is
-  still running.
-- The final polling response returns HTTP `201` and `status: "COMPLETED"`.
-- Stop polling only after receiving both HTTP `201` and `status: "COMPLETED"`.
+It returns precomputed org-wide totals and an affected-dataset breakdown without consuming search quota. Use the returned dataset IDs to scope subsequent `get_keys`, `timeseries`, and `search_logs` calls.
+
+## Saved Searches
+
+Use `get_saved_searches` without an ID to list or filter saved searches, or pass `saved_search_id` to fetch one. Execute one with:
+
+```json
+{
+  "saved_search_id": "saved-search-id",
+  "time_range": "Last 1 hour",
+  "limit": 100
+}
+```
+
+Create one with `dry_run` before persistence:
+
+```json
+{
+  "name": "API errors by service",
+  "dry_run": true,
+  "search_details": {
+    "from_expr": "(\"collection\" IN ('prod-api'))",
+    "where": "\"status\" >= 500",
+    "select": "count(*)",
+    "groups": "service",
+    "display": "toplist",
+    "time_range": "Last 1 hour"
+  }
+}
+```
+
+`create_saved_search` accepts a `saved_searches` batch of up to 20. Supported displays are `list`, `timeseries`, `toplist`, `piechart`, `treemap`, `table`, `geomap`, and `queryvalue`.
+
+## Monitors
+
+Use `search_monitors` without `monitor_id` to search or filter; pass `monitor_id` to inspect one. Dry-run monitor creation:
+
+```json
+{
+  "name": "API 5xx spike",
+  "monitor_type": "PATTERN",
+  "threshold": 100,
+  "comparison_operator": "ABOVE",
+  "window": "Last 15 minutes",
+  "queries": [
+    {
+      "name": "errors",
+      "from": ["dataset-id"],
+      "select": "COUNT(*)",
+      "where": "\"status\" >= 500"
+    }
+  ],
+  "dry_run": true
+}
+```
+
+`create_monitor` accepts a `monitors` batch of up to 20 and supports `PATTERN`, `USAGE`, and `CHANGE_DETECTION`. Every created monitor is muted. Use `validate_monitors` with optional `monitor_ids`; omit them to health-check all existing monitors.
+
+## Coverage And Usage
+
+`get_coverage` reports whether each dataset is monitored, searched, and ingesting. Start with its default compact output and request detail only when monitor identities, tags, metrics, or keys are needed.
+
+`get_usage` summarizes ingestion and search activity. Narrow by activity axis and time range when the question is specific:
+
+```json
+{
+  "usage_type": "search",
+  "time_range": "Last 7 days",
+  "group_by": "collection"
+}
+```
 
 ## Time Ranges
 
