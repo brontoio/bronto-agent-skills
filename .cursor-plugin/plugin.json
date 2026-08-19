@@ -1,0 +1,32 @@
+{
+  "name": "bronto-cursor-plugin",
+  "version": "1.0.0",
+  "description": "Bronto observability MCP for dataset discovery, log queries, error triage, saved searches, monitors, coverage, and usage.",
+  "homepage": "https://docs.bronto.io",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "US_BRONTO_API_KEY": {
+        "type": "string",
+        "title": "US Bronto API key",
+        "description": "Optional API key for organizations hosted in the US region."
+      },
+      "EU_BRONTO_API_KEY": {
+        "type": "string",
+        "title": "EU Bronto API key",
+        "description": "Optional API key for organizations hosted in the EU region."
+      }
+    }
+  },
+  "keywords": [
+    "bronto",
+    "observability",
+    "logs",
+    "mcp",
+    "telemetry",
+    "search",
+    "monitors",
+    "saved-searches",
+    "coverage"
+  ]
+}

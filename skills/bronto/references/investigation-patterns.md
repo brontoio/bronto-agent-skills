@@ -1,0 +1,118 @@
+# Bronto Investigation Patterns
+
+Use this reference when a coding agent is investigating production issues, telemetry,
+logs, errors, latency, or traffic changes through Bronto MCP.
+
+## Default Investigation Flow
+
+1. For errors or warnings, start with `get_error_summary`, use its affected-dataset breakdown, then continue at step 2. Otherwise discover relevant datasets with `get_datasets` unless the user already gave exact dataset IDs.
+2. Inspect schema with `get_keys` before guessing field names.
+3. Inspect common values with `get_key_values` for fields you plan to filter or group by.
+4. Use `timeseries` first for broad scope, counts, rates, trends, percentiles, and top offenders.
+5. Use `search_logs` after narrowing the question to fetch representative raw evidence.
+  Use `search_logs` directly when the user provides an exact event ID, unique error string, or pasted log message.
+6. Report the dataset selection, time window, filter, grouped findings, and raw examples used.
+
+Do not start by querying every dataset. Pick candidate datasets by name, collection, tags, or exact ID.
+
+## Raw Logs
+
+For "what happened" questions:
+
+1. Identify dataset(s).
+2. Use `timeseries` grouped by high-signal dimensions.
+3. Drill into the worst group with `search_logs`.
+4. Return examples with timestamps, key fields, and raw message snippets.
+
+For exact evidence requests, such as an event ID, unique error string, or
+pasted log message, start with a narrow `search_logs` query instead of aggregating first.
+
+Good group-by candidates (always use keys that we know exist in the datasets from the get_keys tool call):
+
+- `service`, `host`, `path`, `route`, `status`, `status_code`
+- `error`, `error_type`, `exception`, `message`
+- `client_ip`, `user_agent`, `region`, `pod`, `container`
+
+## Error Spikes
+
+Start with org-wide, precomputed triage. This does not consume search quota:
+
+```json
+{
+  "time_range": "Last 30 minutes",
+  "num_of_slices": 30
+}
+```
+
+Pass that payload to `get_error_summary`. Select the highest-volume affected dataset IDs from its per-dataset breakdown, inspect their keys, then run a grouped `timeseries` query:
+
+```json
+{
+  "log_ids": ["dataset-id"],
+  "metric_functions": ["COUNT(*)"],
+  "search_filter": "\"status\" >= 500",
+  "group_by_keys": ["service", "path", "status"],
+  "time_range": "Last 30 minutes",
+  "limit": 20
+}
+```
+
+Then run `search_logs` on the top group:
+
+```json
+{
+  "log_ids": ["dataset-id"],
+  "time_range": "Last 30 minutes",
+  "search_filter": "\"status\" >= 500 AND \"service\"='api'",
+  "limit": 20,
+  "order_by": "\"@timestamp\" DESC"
+}
+```
+
+If the status field is unknown, inspect keys first and try likely variants:
+`status`, `status_code`, `http.status_code`.
+
+## Latency
+
+Prefer percentiles over averages:
+
+```json
+{
+  "log_ids": ["dataset-id"],
+  "metric_functions": [
+    "P50(duration_ms)",
+    "P95(duration_ms)",
+    "P99(duration_ms)"
+  ],
+  "group_by_keys": ["service", "path"],
+  "time_range": "Last 1 hour",
+  "limit": 20
+}
+```
+
+## Saved Searches
+
+1. Use `get_saved_searches` to search by text or tags, or fetch an exact saved search by ID.
+2. Use `run_saved_search` to execute an existing query, optionally overriding its time window.
+3. Use `create_saved_search` only when the user wants the query persisted. Dry-run first, and batch no more than 20.
+
+Choose visualization from the result shape: `list` for raw events, `timeseries` for a trend, `toplist` for ranked groups, `table` for grouped rows, `piechart` or `treemap` for proportions, `geomap` for geography, and `queryvalue` for one headline value.
+
+## Monitors
+
+1. Use `search_monitors` to find duplicates or inspect an existing monitor and its recent state.
+2. Use `create_monitor` with `dry_run` before creating one or a batch of up to 20.
+3. Use `validate_monitors` after creation or when auditing existing monitors.
+
+Use `PATTERN` for threshold queries, `USAGE` for volume signals, and `CHANGE_DETECTION` for changes. Every created monitor starts muted; report that it must be reviewed and unmuted in Bronto.
+
+## Coverage And Usage
+
+Use `get_coverage` to identify:
+
+- datasets that are ingesting but have no monitors;
+- datasets that are ingesting but have not been searched;
+- datasets that have stopped ingesting.
+
+Use `get_usage` for organization-level ingestion and search activity. Use it before broad, expensive query sweeps or when the user asks about adoption, volume, or quota pressure.
+

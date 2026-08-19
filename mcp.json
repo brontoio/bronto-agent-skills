@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "bronto-us": {
+      "url": "https://mcp.us.bronto.io/mcp",
+      "headers": {
+        "Accept": "application/json, text/event-stream",
+        "X-BRONTO-API-KEY": "${US_BRONTO_API_KEY}"
+      }
+    },
+    "bronto-eu": {
+      "url": "https://mcp.eu.bronto.io/mcp",
+      "headers": {
+        "Accept": "application/json, text/event-stream",
+        "X-BRONTO-API-KEY": "${EU_BRONTO_API_KEY}"
+      }
+    }
+  }
+}
